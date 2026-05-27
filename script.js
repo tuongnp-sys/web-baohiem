@@ -24,36 +24,12 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "123456";
 const SESSION_SECRET =
   process.env.SESSION_SECRET || "shieldcare-bao-hiem-mo-to-session-2026";
 
-const VERCEL_ORIGIN_PATTERN = /^https:\/\/[\w.-]+\.vercel\.app$/i;
-/** Render: cookie cross-site (Vercel → Render) bắt buộc SameSite=None + Secure */
+/** Render: cookie cross-site bắt buộc SameSite=None + Secure */
 const COOKIE_CROSS_SITE =
   process.env.COOKIE_CROSS_SITE === "true" || IS_PRODUCTION;
 
 let httpServer = null;
 let isShuttingDown = false;
-
-function isOriginAllowed(origin) {
-  if (!origin) return true;
-  if (process.env.CORS_ALLOW_ALL === "true") return true;
-  if (VERCEL_ORIGIN_PATTERN.test(origin)) return true;
-  const extra = (process.env.CORS_ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return extra.includes(origin);
-}
-
-/** CORS: trả về đúng chuỗi origin (bắt buộc khi credentials: true) */
-function resolveCorsOrigin(origin, callback) {
-  if (!origin) {
-    return callback(null, true);
-  }
-  if (isOriginAllowed(origin)) {
-    return callback(null, origin);
-  }
-  console.warn("[CORS] Từ chối origin:", origin);
-  return callback(null, false);
-}
 
 function getSessionCookieOptions() {
   return {
@@ -105,10 +81,9 @@ function handleLogout(req, res) {
 
 app.use(
   cors({
-    origin: resolveCorsOrigin,
-    credentials: true,
+    origin: "https://web-baohiem.onrender.com",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Accept", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 

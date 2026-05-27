@@ -17,11 +17,13 @@
   }
 
   function isSameOriginHost(hostname) {
-    return (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname.endsWith(".onrender.com")
-    );
+    if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+    try {
+      var apiHost = new URL(RENDER_API_ORIGIN).hostname;
+      return hostname === apiHost;
+    } catch {
+      return false;
+    }
   }
 
   function getApiBaseUrl() {

@@ -6,11 +6,21 @@
 
   function getApiUrl() {
     const h = window.location.hostname;
-    if (h === "localhost" || h === "127.0.0.1" ) {
-
+    if (h === "localhost" || h === "127.0.0.1") {
       return "";
     }
-    return "https://web-bao-hiem-emow.onrender.com";
+    if (typeof getApiBaseUrl === "function") {
+      const base = getApiBaseUrl();
+      if (base) return base;
+    }
+    const meta = document.querySelector('meta[name="api-base"]');
+    if (meta && meta.content) {
+      const url = meta.content.trim();
+      if (url && url !== "/" && url !== ".") {
+        return url.replace(/\/$/, "");
+      }
+    }
+    return "https://web-bao-hiem.onrender.com";
   }
 
   const API_URL = getApiUrl();
@@ -210,7 +220,6 @@
 
       fetch(API_URL + "/customer-request", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),
       })
