@@ -119,7 +119,12 @@
     try {
       res = await fetch(API_BASE + url, {
         method: opts.method || "GET",
-        credentials: API_CROSS_ORIGIN ? "omit" : "include",
+        credentials:
+          typeof opts.credentials === "string"
+            ? opts.credentials
+            : API_CROSS_ORIGIN
+              ? "omit"
+              : "include",
         headers: headers,
         body: opts.body,
         signal: controller.signal,
@@ -594,6 +599,7 @@
       showLoading(true);
       const { res, data } = await apiFetch("/login", {
         method: "POST",
+        credentials: "include",
         body: JSON.stringify({ admin: admin, password: password }),
       });
       showLoading(false);
@@ -606,8 +612,16 @@
         (data && data.data && data.data.token) ||
         "";
       if (!token) {
+        // Tương thích backend cũ chỉ dùng session (không trả token).
+        const statusCheck = await apiFetch("/api/auth/status", { credentials: "include" });
+        if (statusCheck.res.ok && statusCheck.data && statusCheck.data.loggedIn === true) {
+          showToast("Đăng nhập bằng session. Nên redeploy backend để bật token mới.", "success");
+          showApp();
+          switchView("dashboard");
+          return;
+        }
         showToast(
-          "Server chưa trả token. Hãy redeploy backend Render (web-bao-hiem-mmwl) rồi thử lại.",
+          "Server chưa trả mã xác thực. Hãy redeploy backend Render (web-bao-hiem-mmwl) rồi thử lại.",
           "error"
         );
         return;
