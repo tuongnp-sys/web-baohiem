@@ -17,7 +17,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-const SESSION_COOKIE_NAME = "connect.sid";
+const SESSION_COOKIE_NAME = "SHIELD_CARE_SESSION";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "baohiem@mo";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "123456";
@@ -28,8 +28,61 @@ const SESSION_SECRET =
 const COOKIE_CROSS_SITE =
   process.env.COOKIE_CROSS_SITE === "true" || IS_PRODUCTION;
 
+const VERCEL_ORIGIN_PATTERN = /^https:\/\/[\w.-]+\.vercel\.app$/i;
+/** Mọi site tĩnh / frontend trên Render (web-bao-hiem-mmwl, web-baohiem, …) */
+const RENDER_SITE_PATTERN = /^https:\/\/[a-z0-9][a-z0-9-]*\.onrender\.com$/i;
+
+const BUILTIN_ALLOWED_ORIGINS = new Set([
+  "https://web-baohiem.vercel.app",
+  "https://web-baohiem.onrender.com",
+]);
+
 let httpServer = null;
 let isShuttingDown = false;
+
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  if (process.env.CORS_ALLOW_ALL === "true") return true;
+  if (BUILTIN_ALLOWED_ORIGINS.has(origin)) return true;
+  if (VERCEL_ORIGIN_PATTERN.test(origin)) return true;
+  if (RENDER_SITE_PATTERN.test(origin)) return true;
+  const extra = (process.env.CORS_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return extra.includes(origin);
+}
+
+function resolveCorsOrigin(origin, callback) {
+  if (!origin || isOriginAllowed(origin)) {
+    return callback(null, origin || true);
+  }
+  console.warn("[CORS] Từ chối origin:", origin);
+  return callback(null, false);
+}
+
+const corsOptions = {
+  origin: resolveCorsOrigin,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Accept", "Authorization"],
+  optionsSuccessStatus: 204,
+};
+
+/** Preflight OPTIONS — tránh Express trả 200 không có header CORS */
+function handleCorsPreflight(req, res, next) {
+  const origin = req.headers.origin;
+  if (req.method !== "OPTIONS" || !origin || !isOriginAllowed(origin)) {
+    return next();
+  }
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader("Vary", "Origin");
+  return res.status(204).end();
+}
 
 function getSessionCookieOptions() {
   return {
@@ -79,29 +132,20 @@ function handleLogout(req, res) {
   });
 }
 
-app.use(
-  cors({
-    origin: "https://web-baohiem.onrender.com",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(handleCorsPreflight);
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.use(bodyParser.json({ limit: "1mb" }));
 
-
 app.use(
   session({
-    name: 'SHIELD_CARE_SESSION', // Bạn có thể giữ tên cũ hoặc đổi như này
-    secret: 'shieldcare-bao-hiem-mo-to-session-2026', 
+    name: "SHIELD_CARE_SESSION",
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    proxy: true, // THÊM DÒNG NÀY (Bắt buộc cho Render)
-    cookie: {
-      secure: true,    // PHẢI LÀ true (Vì Render dùng HTTPS)
-      sameSite: 'none', // PHẢI LÀ 'none' (Để Vercel gửi được cookie)
-      maxAge: 24 * 60 * 60 * 1000,
-    },
+    proxy: true,
+    cookie: Object.assign({ maxAge: 24 * 60 * 60 * 1000 }, getSessionCookieOptions()),
   })
 );
 //-----------------------------
@@ -178,17 +222,20 @@ app.post("/login", (req, res) => {
 
   if (adminUser === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
     const token = createAuthToken();
+    const payload = {
+      success: true,
+      message: "Đăng nhập thành công.",
+      token,
+    };
+    if (!req.session) {
+      return res.json(payload);
+    }
     req.session.isAdmin = true;
     return req.session.save((saveErr) => {
       if (saveErr) {
         console.error("[login] session.save:", saveErr);
-        return res.status(500).json({ success: false, error: "Không lưu được phiên đăng nhập." });
       }
-      return res.json({
-        success: true,
-        message: "Đăng nhập thành công.",
-        token,
-      });
+      return res.json(payload);
     });
   }
 

@@ -32,6 +32,14 @@
     if (isSameOriginHost(h)) {
       return "";
     }
+    if (h.endsWith(".vercel.app")) {
+      var vercelMeta = readMetaApiBase();
+      return vercelMeta || RENDER_API_ORIGIN;
+    }
+    if (h.endsWith(".onrender.com") && !isSameOriginHost(h)) {
+      var renderMeta = readMetaApiBase();
+      return renderMeta || RENDER_API_ORIGIN;
+    }
     var fromMeta = readMetaApiBase();
     if (fromMeta) return fromMeta;
     return RENDER_API_ORIGIN;

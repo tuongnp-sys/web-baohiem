@@ -8,6 +8,14 @@
 
   const API_BASE =
     typeof getApiBaseUrl === "function" ? getApiBaseUrl() : "";
+  const API_CROSS_ORIGIN = (function () {
+    if (!API_BASE) return false;
+    try {
+      return new URL(API_BASE, window.location.href).origin !== window.location.origin;
+    } catch {
+      return true;
+    }
+  })();
   const STATUS_NEW = "Yêu cầu mới";
   const PHONE_REGEX = /^(0|\+84)[0-9]{8,11}$/;
 
@@ -111,7 +119,7 @@
     try {
       res = await fetch(API_BASE + url, {
         method: opts.method || "GET",
-        credentials: "same-origin",
+        credentials: API_CROSS_ORIGIN ? "omit" : "include",
         headers: headers,
         body: opts.body,
         signal: controller.signal,
@@ -593,12 +601,18 @@
         showToast(data.error || "Đăng nhập thất bại.", "error");
         return;
       }
-      if (data.token) {
-        setAuthToken(data.token);
-      } else {
-        showToast("Server không trả mã xác thực.", "error");
+      const token =
+        (data && data.token) ||
+        (data && data.data && data.data.token) ||
+        "";
+      if (!token) {
+        showToast(
+          "Server chưa trả token. Hãy redeploy backend Render (web-bao-hiem) rồi thử lại.",
+          "error"
+        );
         return;
       }
+      setAuthToken(token);
       showToast("Đăng nhập thành công!", "success");
       showApp();
       switchView("dashboard");
