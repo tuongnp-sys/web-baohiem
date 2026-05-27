@@ -20,7 +20,7 @@
         return url.replace(/\/$/, "");
       }
     }
-    return "https://web-baohiem-1.onrender.com";
+    return "https://web-bao-hiem.onrender.com";
   }
 
   const API_URL = getApiUrl();

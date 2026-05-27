@@ -28,8 +28,35 @@ const SESSION_SECRET =
 const COOKIE_CROSS_SITE =
   process.env.COOKIE_CROSS_SITE === "true" || IS_PRODUCTION;
 
+const VERCEL_ORIGIN_PATTERN = /^https:\/\/[\w.-]+\.vercel\.app$/i;
+/** Frontend tĩnh Render: web-bao-hiem, web-bao-hiem-xxxx */
+const RENDER_FRONTEND_PATTERN = /^https:\/\/web-bao-hiem(-[a-z0-9]+)?\.onrender\.com$/i;
+/** Frontend Render tên rút gọn (nếu có) */
+const RENDER_BAOHIEM_FRONTEND_PATTERN = /^https:\/\/web-baohiem\.onrender\.com$/i;
+
 let httpServer = null;
 let isShuttingDown = false;
+
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  if (process.env.CORS_ALLOW_ALL === "true") return true;
+  if (VERCEL_ORIGIN_PATTERN.test(origin)) return true;
+  if (RENDER_FRONTEND_PATTERN.test(origin)) return true;
+  if (RENDER_BAOHIEM_FRONTEND_PATTERN.test(origin)) return true;
+  const extra = (process.env.CORS_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return extra.includes(origin);
+}
+
+function resolveCorsOrigin(origin, callback) {
+  if (!origin || isOriginAllowed(origin)) {
+    return callback(null, origin || true);
+  }
+  console.warn("[CORS] Từ chối origin:", origin);
+  return callback(null, false);
+}
 
 function getSessionCookieOptions() {
   return {
@@ -81,9 +108,10 @@ function handleLogout(req, res) {
 
 app.use(
   cors({
-    origin: "https://web-baohiem.onrender.com",
+    origin: resolveCorsOrigin,
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Accept", "Authorization"],
   })
 );
 
