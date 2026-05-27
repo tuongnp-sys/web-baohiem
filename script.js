@@ -35,6 +35,7 @@ const RENDER_SITE_PATTERN = /^https:\/\/[a-z0-9][a-z0-9-]*\.onrender\.com$/i;
 const BUILTIN_ALLOWED_ORIGINS = new Set([
   "https://web-baohiem.vercel.app",
   "https://web-baohiem.onrender.com",
+  "https://web-bao-hiem-mmwl.onrender.com",
 ]);
 
 let httpServer = null;
@@ -83,7 +84,6 @@ function handleCorsPreflight(req, res, next) {
   res.setHeader("Vary", "Origin");
   return res.status(204).end();
 }
-
 function getSessionCookieOptions() {
   return {
     path: "/",
@@ -140,7 +140,7 @@ app.use(bodyParser.json({ limit: "1mb" }));
 
 app.use(
   session({
-    name: "SHIELD_CARE_SESSION",
+    name: SESSION_COOKIE_NAME,
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,

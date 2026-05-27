@@ -28,21 +28,24 @@ npm start
 1. Tạo **Web Service**, connect repo GitHub.
 2. **Build:** `npm install`
 3. **Start:** `npm start`
-4. Biến môi trường:
-   - `NODE_ENV=production`
-   - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SESSION_SECRET` (chuỗi bí mật dài)
-   - `CORS_ALLOWED_ORIGINS=https://your-app.vercel.app` (domain Vercel của bạn)
-5. Ghi lại URL Render, ví dụ `https://web-bao-hiem.onrender.com`
+4. Biến môi trường (Render Dashboard → Environment):
+   - `NODE_ENV=production` (bắt buộc — bật cookie Secure cho HTTPS)
+   - `COOKIE_CROSS_SITE=true` (tùy chọn, mặc định bật khi `NODE_ENV=production`)
+   - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SESSION_SECRET` (chuỗi bí mật dài, đổi khỏi mặc định)
+   - `CORS_ALLOWED_ORIGINS` — chỉ cần nếu dùng domain tùy chỉnh (không phải `*.vercel.app`)
+5. URL backend hiện tại: `https://web-bao-hiem-mmwl.onrender.com`
+6. Có thể dùng `render.yaml` trong repo để tạo service nhanh.
 
 ### 2. Frontend (Vercel)
 
-1. Import repo, **Root Directory** = thư mục project.
-2. Framework: Other (static).
-3. Sửa URL API trong **hai chỗ** (thay domain Render thật):
-   - `index.html` → `<meta name="api-base" content="https://...onrender.com" />`
-   - `admin.html` → cùng meta `api-base`
-   - Hoặc sửa `RENDER_API_ORIGIN` trong `api-config.js`
-4. Deploy — không cần rewrite API (frontend gọi thẳng Render).
+1. Import repo GitHub `tuongnp-sys/web-baohiem`, **Root Directory** = thư mục project.
+2. Framework: **Other** (static). `vercel.json` đã cấu hình `buildCommand`/`installCommand` rỗng.
+3. URL API đã cấu hình sẵn tại:
+   - `index.html` / `admin.html` → meta `api-base`
+   - `api-config.js` → `RENDER_API_ORIGIN`
+   - `frontend.js` → fallback cùng domain Render
+4. Deploy — frontend gọi thẳng Render, không proxy qua Vercel.
+5. URL Vercel mẫu: `https://web-baohiem.vercel.app`
 
 ### 3. Kiểm tra sau deploy
 

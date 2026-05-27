@@ -1,0 +1,12 @@
+# Vercel chỉ host frontend tĩnh — backend chạy trên Render
+script.js
+database.js
+database.db
+database.db-wal
+database.db-shm
+validators.js
+node_modules
+.env
+.env.*
+push-to-github.ps1
+render.yaml

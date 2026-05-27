@@ -1,0 +1,21 @@
+# Render Web Service — backend API + SQLite
+# Dashboard: New > Blueprint hoặc gán file này khi tạo service
+services:
+  - type: web
+    name: web-bao-hiem-mmwl
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_CROSS_SITE
+        value: "true"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
