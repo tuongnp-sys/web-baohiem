@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var RENDER_API_ORIGIN = "https://web-bao-hiem.onrender.com";
+  var RENDER_API_ORIGIN = "https://web-bao-hiem-mmwl.onrender.com";
 
   function readMetaApiBase() {
     if (!global.document) return "";

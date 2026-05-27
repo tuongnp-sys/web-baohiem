@@ -607,7 +607,7 @@
         "";
       if (!token) {
         showToast(
-          "Server chưa trả token. Hãy redeploy backend Render (web-bao-hiem) rồi thử lại.",
+          "Server chưa trả token. Hãy redeploy backend Render (web-bao-hiem-mmwl) rồi thử lại.",
           "error"
         );
         return;
